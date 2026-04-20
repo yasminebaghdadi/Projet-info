@@ -1,0 +1,66 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f3efff;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 80%;
+    max-width: 700px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+h1, h2, h3, h4 {
+    color: #5a3ec8;
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input, textarea {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.btn {
+    display: inline-block;
+    background: #7b5cff;
+    color: white;
+    padding: 12px 18px;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.btn:hover {
+    background: #6145d6;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+}
+
+.card {
+    background: #faf8ff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}

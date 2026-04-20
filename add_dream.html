@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter un rêve</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Ajouter un nouveau rêve</h2>
+
+        <form method="POST">
+            <input type="text" name="title" placeholder="Titre du rêve" required>
+            <textarea name="content" rows="10" placeholder="Écrivez votre rêve ici..." required></textarea>
+
+            <label>
+                <input type="checkbox" name="is_public">
+                Publier ce rêve publiquement
+            </label>
+
+            <button type="submit" class="btn">Interpréter</button>
+        </form>
+    </div>
+</body>
+</html>

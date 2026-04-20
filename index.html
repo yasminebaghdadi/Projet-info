@@ -1,0 +1,20 @@
+ 
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Nebula - Accueil</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Nebula</h1>
+        <p>Bienvenue sur votre application d’analyse de rêves.</p>
+
+        <div class="buttons">
+            <a href="{{ url_for('register') }}" class="btn">Créer un compte</a>
+            <a href="{{ url_for('login') }}" class="btn">Connexion</a>
+        </div>
+    </div>
+</body>
+</html>
