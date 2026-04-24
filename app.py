@@ -1,12 +1,52 @@
  
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+import os 
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+from groq import Groq 
+load_dotenv() 
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def analyser_reve(reve):
+    
+    prompt = f"""
+    Tu es un expert en psychologie des rêves.
+
+    Analyse ce rêve en 3 parties :
+    1. Émotions
+    2. Symboles
+    3. Interprétation claire
+
+    Rêve : {reve}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",  
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Erreur IA : {str(e)}"
+
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
 DATABASE = "dreams.db"
+
+@app.route("/", methods=["GET" , "POST"])
+def index() :
+    if request.method == "POST":
+        reve = request.form["reve"]
+        analyse = analyser_reve(reve)
+        return render_template("index.html", analyse=analyse)
+    return render_template("index.html")
 
 
 def get_db_connection():
@@ -42,33 +82,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
-
-def interpret_dream(text):
-    text = text.lower()
-    interpretations = []
-
-    if "tomber" in text:
-        interpretations.append("Ce rêve peut montrer une peur de perdre le contrôle.")
-    if "voler" in text:
-        interpretations.append("Ce rêve peut symboliser un désir de liberté.")
-    if "eau" in text:
-        interpretations.append("L'eau peut représenter les émotions.")
-    if "maison" in text:
-        interpretations.append("La maison peut représenter votre monde intérieur.")
-    if "poursuivi" in text or "courir" in text:
-        interpretations.append("Ce rêve peut montrer du stress ou une fuite devant un problème.")
-
-    if not interpretations:
-        return "Ce rêve semble exprimer des émotions personnelles. Une analyse plus approfondie dépendrait du contexte."
-
-    return " ".join(interpretations)
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -143,7 +156,7 @@ def add_dream():
         content = request.form["content"]
         is_public = 1 if request.form.get("is_public") == "on" else 0
 
-        interpretation = interpret_dream(content)
+        interpretation = analyser_reve(content)
 
         conn = get_db_connection()
         cursor = conn.cursor()
