@@ -11,12 +11,17 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def analyser_reve(reve):
     
     prompt = f"""
-    Tu es un expert en psychologie des rêves.
+    Tu es une IA sympathique, naturelle et bienveillante qui aide à comprendre les rêves.
+    Analyse le rêve de façon claire, courte et agréable à lire.
+    Ton style doit être cool, humain, rassurant et facile à comprendre.
+    Important 
+    - Ne fais pas une réponse trop longue.
+    - Ne sois pas trop scientifique ni trop compliqué.
+    - Ne dis pas que l'interprétation est une vérité absolue.
+    - Donne une vraie analyse psychologique possible.
+    - Utilise un ton doux et positif.
 
-    Analyse ce rêve en 3 parties :
-    1. Émotions
-    2. Symboles
-    3. Interprétation claire
+
 
     Rêve : {reve}
     """
@@ -40,13 +45,27 @@ app.secret_key = "secret123"
 
 DATABASE = "dreams.db"
 
-@app.route("/", methods=["GET" , "POST"])
-def index() :
-    if request.method == "POST":
-        reve = request.form["reve"]
-        analyse = analyser_reve(reve)
-        return render_template("index.html", analyse=analyse)
-    return render_template("index.html")
+@app.route("/")
+def index():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return redirect(url_for("feed")) 
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT dreams.*, users.username
+        FROM dreams
+        JOIN users ON dreams.user_id = users.id
+        WHERE dreams.is_public = 1
+        ORDER BY dreams.id DESC
+    """)
+
+    dreams = cursor.fetchall()
+    conn.close()
+
+    return render_template("feed.html", dreams=dreams)
 
 
 def get_db_connection():
@@ -77,6 +96,18 @@ def init_db():
             interpretation TEXT,
             is_public INTEGER DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dream_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (dream_id) REFERENCES dreams (id),
+        FOREIGN KEY (user_id) REFERENCES users (id)
         )
     """)
 
@@ -125,12 +156,11 @@ def login():
         if user and check_password_hash(user["password"], password):
             session["user_id"] = user["id"]
             session["username"] = user["username"]
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("feed"))
         else:
             return "Email ou mot de passe incorrect."
 
     return render_template("login.html")
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -139,11 +169,29 @@ def dashboard():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM dreams WHERE user_id = ?", (session["user_id"],))
+
+    cursor.execute(
+        "SELECT * FROM dreams WHERE user_id = ?",
+        (session["user_id"],)
+    )
     dreams = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT comments.*, users.username
+        FROM comments
+        JOIN users ON comments.user_id = users.id
+        ORDER BY comments.id DESC
+    """)
+    
+    comments = cursor.fetchall()
     conn.close()
 
-    return render_template("dashboard.html", dreams=dreams, username=session["username"])
+    return render_template(
+        "dashboard.html",
+        dreams=dreams,
+        comments=comments,
+        username=session["username"]
+    )
 
 
 @app.route("/add_dream", methods=["GET", "POST"])
@@ -197,6 +245,101 @@ def result(dream_id):
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
+
+
+@app.route("/feed")
+def feed():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT dreams.*, users.username
+        FROM dreams
+        JOIN users ON dreams.user_id = users.id
+        WHERE dreams.is_public = 1
+        ORDER BY dreams.id DESC
+    """)
+    dreams = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT comments.*, users.username
+        FROM comments
+        JOIN users ON comments.user_id = users.id
+        ORDER BY comments.created_at ASC
+    """)
+    comments = cursor.fetchall()
+
+    conn.close()
+
+    return render_template("feed.html", dreams=dreams, comments=comments)
+
+
+@app.route("/comment/<int:dream_id>", methods=["POST"])
+def comment(dream_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    content = request.form["content"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO comments (dream_id, user_id, content)
+        VALUES (?, ?, ?)
+    """, (dream_id, session["user_id"], content))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("feed"))
+
+@app.route("/delete_dream/<int:dream_id>", methods=["POST"])
+def delete_dream(dream_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM comments WHERE dream_id = ?",
+        (dream_id,)
+    )
+
+    cursor.execute(
+        "DELETE FROM dreams WHERE id = ? AND user_id = ?",
+        (dream_id, session["user_id"])
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("feed"))
+
+
+@app.route("/delete_comment/<int:comment_id>", methods=["POST"])
+def delete_comment(comment_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM comments WHERE id = ? AND user_id = ?",
+        (comment_id, session["user_id"])
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("feed"))
+
 
 
 if __name__ == "__main__":

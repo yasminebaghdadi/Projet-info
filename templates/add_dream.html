@@ -10,16 +10,19 @@
     <div class="container">
         <h2>Ajouter un nouveau rêve</h2>
 
-        <form method="POST">
-            <input type="text" name="title" placeholder="Titre du rêve" required>
-            <textarea name="content" rows="10" placeholder="Écrivez votre rêve ici..." required></textarea>
+<form method="POST">
 
-            <label>
-                <input type="checkbox" name="is_public">
-                Publier ce rêve publiquement
-            </label>
+    <input type="text" name="title" placeholder="Titre" required>
 
-            <button type="submit" class="btn">Interpréter</button>
+    <textarea name="content" placeholder="Décris ton rêve..." required></textarea>
+
+    
+    <label>
+        <input type="checkbox" name="is_public">
+        Publier ce rêve dans le feed public
+    </label>
+
+            <button type="submit" class="btn">Ajouter & Interpréter</button>
         </form>
     </div>
 </body>

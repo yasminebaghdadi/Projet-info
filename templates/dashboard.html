@@ -6,13 +6,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h2>Bonjour {{ username }}</h2>
+    <div class="dashboard-layout">
 
-        <div class="buttons">
-            <a href="{{ url_for('add_dream') }}" class="btn">Ajouter un rêve</a>
-            <a href="{{ url_for('logout') }}" class="btn">Déconnexion</a>
+        <aside class="profile-sidebar">
+
+        <div class="profile-card">
+            <img src="{{ url_for('static', filename='default.png') }}" class="profile-pic">
+            <h3>{{ username }}</h3>
+            <a href="{{ url_for('add_dream') }}" class="btn">
+    Ajouter un rêve
+</a>
+
+<a href="{{ url_for('feed') }}" class="btn">
+    Feed public
+</a>
+
+<a href="{{ url_for('logout') }}" class="btn">
+    Déconnexion
+</a>
         </div>
+    </aside>
+
+    <main class="dreams-section">
 
         <h3>Mes rêves</h3>
 
@@ -22,11 +37,33 @@
                     <h4>{{ dream["title"] }}</h4>
                     <p>{{ dream["content"] }}</p>
                     <p><strong>Interprétation :</strong> {{ dream["interpretation"] }}</p>
-                </div>
+                <button class="show-comments-btn" onclick="toggleComments('{{ dream['id'] }}')">
+    Commentaire
+</button>
+
+<div id="comments-{{ dream['id'] }}" class="comments-section" style="display: none;">
+
+    {% for comment in comments %}
+        {% if comment["dream_id"] == dream["id"] %}
+            <div class="comment">
+                <strong>{{ comment["username"] }}</strong>
+                <p>{{ comment["content"] }}</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+
+</div>
+            </div>
+        
+
             {% endfor %}
         {% else %}
             <p>Aucun rêve enregistré pour le moment.</p>
         {% endif %}
+        </main>
     </div>
 </body>
 </html>
+
+ 
+ 

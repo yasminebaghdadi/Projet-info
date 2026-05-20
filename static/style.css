@@ -1,18 +1,26 @@
 body {
     font-family: Arial, sans-serif;
-    background: #f3efff;
+    background: url("background.jpg") no-repeat center center;
+    background-size: cover;
     margin: 0;
     padding: 0;
+    min-height: 100vh;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.25);
+    pointer-events: none;
 }
 
 .container {
-    width: 80%;
-    max-width: 700px;
-    margin: 40px auto;
-    background: white;
-    padding: 30px;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    background: transparent; 
+    box-shadow: none;
 }
 
 h1, h2, h3, h4 {
@@ -34,19 +42,39 @@ input, textarea {
 }
 
 .btn {
-    display: inline-block;
-    background: #7b5cff;
-    color: white;
-    padding: 12px 18px;
-    text-decoration: none;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
+    display: block;
+    width: 180px;
+
     text-align: center;
+    text-decoration: none;
+
+    background: #dcd6ff;
+    color: #3f3a66;
+
+    padding: 14px 16px;
+    margin: 15px auto;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    border-radius: 50px;
+
+    border: 2px solid #b8aef5;
+
+    box-shadow:
+        -15px 0 0 #dcd6ff,
+        15px 0 0 #dcd6ff,
+        0 -10px 0 #dcd6ff;
+
+    transition: 0.3s;
+
+    cursor: pointer;
+    overflow: hidden;
 }
 
 .btn:hover {
-    background: #6145d6;
+    background: #c7bcff;
+    transform: scale(1.05);
 }
 
 .buttons {
@@ -57,10 +85,233 @@ input, textarea {
     margin: 20px 0;
 }
 
-.card {
-    background: #faf8ff;
-    border: 1px solid #ddd;
-    padding: 15px;
+ .card {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #dddddd;
+    border-radius: 25px;
+    padding: 35px;
+    margin-bottom: 40px;
+    max-width: 750px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    backdrop-filter: blur(8px);
+}
+
+
+.logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo img {
+    width: 70px;
+}
+
+.logo h1 {
+    margin: 0;
+    color: #1d2b5f;
+}
+
+.cloud {
+    background: #7f95c9;
+    padding: 12px 20px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.reddit-layout {
+    display: block;
+    width: 100%;
+    
+}
+
+.left-menu {
+    position: absolute;
+    left: 30px;
+    top: 60px;
+    width: 220px;
+    background: rgba(255,255,255,0.9);
+    padding: 20px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.logo {
+    text-align: center;
+    color: #4a6cf7;
+    margin-bottom: 10px;
+}
+
+.menu-link {
+    text-decoration: none;
+    padding: 10px;
     border-radius: 10px;
+    color: black;
+    background: #f2f2f2;
+    transition: 0.3s;
+}
+
+.menu-link:hover {
+    background: #e0e0e0;
+}
+
+
+
+.feed-center {
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+.feed-center h1 {
+    color: #6c63ff;
+    margin-bottom: 20px;
+}
+
+
+.post-user {
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.feed-card h2 {
+    color: #6c63ff;
+}
+
+.interpretation {
+    background: #f5f5ff;
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 12px;
+}
+
+.comment-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.comment-form input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+.comment-form button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: #6c63ff;
+    color: white;
+    cursor: pointer;
+}
+
+.feed-card {
+    background: white !important;
+    padding: 30px !important;
+    margin-bottom: 60px !important;
+    border-radius: 20px !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+
+
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+
+    width: 100% !important;
+    clear: both !important;
+}
+
+
+.interpretation {
+    background: #f4f4ff;
+    padding: 18px;
+    border-radius: 14px;
+    margin: 20px 0;
+}
+
+
+.show-comments-btn {
     margin-top: 15px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    background: #6c63ff;
+    color: white;
+    cursor: pointer;
+}
+
+.comments-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f8f8;
+    border-radius: 12px;
+}
+
+.comment {
+    background: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border-left: 4px solid #6c63ff;
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.post-menu summary {
+    cursor: pointer;
+    font-size: 24px;
+    list-style: none;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: red;
+}
+
+
+
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 60px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.profile-sidebar {
+    width: 280px;
+}
+
+.profile-card {
+    background: rgba(255,255,255,0.92);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border: 1px solid #dddddd;
+}
+
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+
+.dreams-section {
+    width: 100%;
 }
