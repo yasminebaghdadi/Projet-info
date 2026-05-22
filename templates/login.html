@@ -2,21 +2,35 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Connexion</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Nebula</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"
 </head>
 <body>
-    <div class="container">
-        <h2>Connexion</h2>
 
-        <form method="POST">
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Mot de passe" required>
-            <button type="submit" class="btn">Se connecter</button>
-        </form>
+  <div class="container">
 
-        <p><a href="{{ url_for('register') }}">Pas encore de compte ? S'inscrire</a></p>
+    <header class="logo">
+      <img src="{{ url_for('static', filename='IMG_2508.png' )}}" class="main-logo-img"> 
+      <h1>Nebula</h1>
+    </header>
+
+    <div class="card">
+      
+
+      <form method="POST" action="{{ url_for('login') }}">
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Mot de passe" required>
+    <button type="submit" class="btn"> Se connecter</button>
+</form>
+
+    <p class="signup">
+      Pas encore de compte ? 
+      <a href="{{ url_for('register') }}">S'inscrire</a>
+    </p>
     </div>
+
+  </div>
+
 </body>
 </html>

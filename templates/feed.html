@@ -1,106 +1,266 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <title>Feed public</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
 <div class="reddit-layout">
 
-  <aside class="left-menu">
-    <h2 class="logo">Nebula</h2>
+    <aside class="left-menu feed-menu">
+        <h2 class="logo"><img src="{{ url_for('static', filename='IMG_2508.png') }}"
+            class="logo-img">
+            Nebula
+        </h2>
 
-    <a href="{{ url_for('dashboard') }}" class="menu-link">👤 Profil</a>
-    <a href="{{ url_for('add_dream') }}" class="menu-link">➕ Ajouter un rêve</a>
-    <a href="{{ url_for('logout') }}" class="menu-link">🚪 Déconnexion</a>
-</aside>
+        <a href="{{ url_for('dashboard') }}" class="btn">
+            👤 Profil
+        </a>
+
+        <a href="{{ url_for('add_dream') }}" class="btn">
+            ➕ Ajouter un rêve
+        </a>
+
+        <a href="{{ url_for('logout') }}" class="btn">
+            🚪 Déconnexion
+        </a>
+    </aside>
 
     <main class="feed-center">
 
-{% if dreams %}
+    {% if dreams %}
 
-{% for dream in dreams %}
+        {% for dream in dreams %}
 
-<div class="feed-card">
+        <div class="feed-card">
 
-    <div class="post-header">
-        <div class="post-user">👤 {{ dream["username"] }}</div>
-
-        {% if dream["user_id"] == session["user_id"] %}
-        <details class="post-menu">
-            <summary>⋯</summary>
-            <form action="{{ url_for('delete_dream', dream_id=dream['id']) }}" method="POST">
-                <button type="submit" class="delete-btn">🗑</button>
-            </form>
-        </details>
-        {% endif %}
-    </div>
-
-    <h2>{{ dream["title"] }}</h2>
-    <p>{{ dream["content"] }}</p>
-
-    <div class="interpretation">
-        <strong>Interprétation IA :</strong>
-        <p>{{ dream["interpretation"] }}</p>
-    </div>
-
-    <button class="show-comments-btn" onclick="toggleComments('{{ dream['id'] }}')">
-        Commentaires
-    </button>
-
-    <div id="comments-{{ dream['id'] }}" class="comments-section" style="display: none;">
-
-        {% for comment in comments %}
-            {% if comment["dream_id"] == dream["id"] %}
-                <div class="comment">
-                    <strong>{{ comment["username"] }}</strong>
-                    <p>{{ comment["content"] }}</p>
-
-                    {% if comment["user_id"] == session["user_id"] %}
-                    <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}" method="POST">
-                        <button type="submit" class="delete-btn">🗑</button>
-                    </form>
-                    {% endif %}
+            <div class="post-header">
+                <div class="post-user">👤 {{ dream["username"] }}
+                    
                 </div>
-            {% endif %}
+
+                {% if dream["user_id"] == session["user_id"] %}
+
+                <details class="post-menu">
+
+                    <summary>⋮</summary>
+
+                    <form action="{{ url_for('delete_dream', dream_id=dream['id']) }}"
+                          method="POST">
+
+                        <button type="submit" class="delete-btn">
+                            🗑
+                        </button>
+
+                    </form>
+
+                </details>
+
+                {% endif %}
+
+            </div>
+
+            <h2>{{ dream["title"] }}</h2>
+
+            <p>{{ dream["content"] }}</p>
+
+            <button class="show-comments-btn"
+                    onclick="toggleInterpretation('{{ dream['id'] }}')">
+
+                Voir l’interprétation IA
+
+            </button>
+
+            <div id="interpretation-{{ dream['id'] }}"
+                 class="interpretation"
+                 style="display:none;">
+
+                <strong>Interprétation IA :</strong>
+
+                <p>{{ dream["interpretation"] }}</p>
+
+            </div>
+
+            <button class="show-comments-btn"
+                    onclick="toggleComments('{{ dream['id'] }}')">
+
+                Commentaire
+
+            </button>
+            <div class="like-section">
+                <form action="{{ url_for('like_dream', dream_id=dream['id']) }}" method="POST">
+                    <button type="submit" class="like-btn">👍 Like</button>
+                </form>
+                
+                <span class="like-count">
+                    ❤️ {{ likes.get(dream["id"], 0) }}
+                </span>
+            </div>
+
+            <div id="comments-{{ dream['id'] }}"
+                 class="comments-section"
+                 style="display:none;">
+
+                {% for comment in comments %}
+
+                    {% if comment["dream_id"] == dream["id"] %}
+
+                    <div class="comment">
+                        <div class="comment-header">
+                            <strong>{{ comment["username"] }}</strong>
+                            {% if comment["user_id"] == session["user_id"] %}
+                            <details class="comment-menu">
+                                <summary>⋯</summary>
+                                <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}" method="POST">
+                                    <button type="submit" class="delete-btn">🗑 Supprimer</button>
+                                 </form>
+                                </details>
+                                {% endif %}
+                            </div>
+                            <p>{{ comment["content"] }}</p>
+
+                        {% for reply in replies %}
+
+                            {% if reply["comment_id"] == comment["id"] %}
+
+                            <div class="reply">
+
+                                <p class="reply-user">
+                                    Réponse de
+                                    <strong>{{ reply["username"] }}</strong>
+                                </p>
+
+                                <div class="reply-box">
+                                    {{ reply["content"] }}
+                                </div>
+
+                            </div>
+
+                            {% endif %}
+
+                        {% endfor %}
+
+                        <p class="reply-link"
+                           onclick="toggleReplyForm('{{ comment['id'] }}')">
+
+                            Répondre
+
+                        </p>
+
+                        <form id="reply-form-{{ comment['id'] }}"
+                              action="{{ url_for('reply', comment_id=comment['id']) }}"
+                              method="POST"
+                              class="reply-form"
+                              style="display:none;">
+
+                            <input type="text"
+                                   name="content"
+                                   placeholder="Écrire une réponse..."
+                                   required>
+
+                            <button type="submit"
+                                    class="send-reply-btn">
+
+                                Envoyer
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                    {% endif %}
+
+                {% endfor %}
+
+                <form action="{{ url_for('comment', dream_id=dream['id']) }}"
+                      method="POST"
+                      class="comment-form">
+
+                    <input type="text"
+                           name="content"
+                           placeholder="Écrire un commentaire..."
+                           required>
+
+                    <button type="submit">
+                        Commenter
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
         {% endfor %}
 
-        <form action="{{ url_for('comment', dream_id=dream['id']) }}" method="POST" class="comment-form">
-            <input type="text" name="content" placeholder="Écrire un commentaire..." required>
-            <button type="submit">Commenter</button>
-        </form>
+    {% else %}
 
-    </div>
+        <div class="feed-card">
 
-</div>
+            <h2>Aucune publication</h2>
 
-{% endfor %}
+            <p>Aucun rêve public n'a encore été publié.</p>
 
-{% else %}
+        </div>
 
-<div class="feed-card">
-    <h2>Aucune publication</h2>
-    <p>Aucun rêve public n'a encore été publié.</p>
-</div>
+    {% endif %}
 
-{% endif %}
-
-</main>
+    </main>
 
 </div>
 
 <script>
+
 function toggleComments(id) {
+
     const section = document.getElementById("comments-" + id);
 
     if (section.style.display === "none") {
+
         section.style.display = "block";
+
     } else {
+
         section.style.display = "none";
+
     }
 }
+
+function toggleReplyForm(id) {
+
+    const form = document.getElementById("reply-form-" + id);
+
+    if (form.style.display === "none") {
+
+        form.style.display = "flex";
+
+    } else {
+
+        form.style.display = "none";
+
+    }
+}
+
+function toggleInterpretation(id) {
+
+    const section = document.getElementById("interpretation-" + id);
+
+    if (section.style.display === "none") {
+
+        section.style.display = "block";
+
+    } else {
+
+        section.style.display = "none";
+
+    }
+}
+
 </script>
 
 </body>

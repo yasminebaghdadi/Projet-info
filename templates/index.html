@@ -1,15 +1,17 @@
- 
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Nebula - Accueil</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <div class="container">
-        <h1>Nebula</h1>
-        <p>Bienvenue sur votre application d’analyse de rêves.</p>
+<body class="login-page">
+    <div class="container"><h1> class="main-logo"<img src="{{ url_for('static',filename='IMG_2508.png') }}" class="main-logo-img"> 
+            Nebula
+        </h1>
+
+        
+        <p>Bienvenue sur votre site d’analyse de rêves.</p>
 
         <div class="buttons">
             <a href="{{ url_for('register') }}" class="btn">Créer un compte</a>

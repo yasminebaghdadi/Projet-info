@@ -40,28 +40,97 @@
                 <button class="show-comments-btn" onclick="toggleComments('{{ dream['id'] }}')">
     Commentaire
 </button>
+<div class="like-section">
+    <form action="{{ url_for('like_dream', dream_id=dream['id']) }}" method="POST">
+        <button type="submit" class="like-btn">👍 Like</button>
+    </form>
+
+    <span class="like-count">
+        ❤️ {{ likes.get(dream["id"], 0) }}
+    </span>
+</div>
 
 <div id="comments-{{ dream['id'] }}" class="comments-section" style="display: none;">
 
     {% for comment in comments %}
         {% if comment["dream_id"] == dream["id"] %}
             <div class="comment">
-                <strong>{{ comment["username"] }}</strong>
+                 <div class="comment-header">
+                    <strong>{{ comment["username"] }}</strong>
+                    {% if comment["user_id"] == session["user_id"] %}
+                    <details class="comment-menu">
+                        <summary>⋯</summary>
+                        <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}" method="POST">
+                            <button type="submit" class="delete-btn">🗑 Supprimer </button>
+                        </form>
+                    </details>
+                    {% endif %}
+                </div>
                 <p>{{ comment["content"] }}</p>
+
+                {% for reply in replies %}
+                    {% if reply["comment_id"] == comment["id"] %}
+                        <div class="reply">
+                            <p class="reply-user">
+                                Réponse de <strong>{{ reply["username"] }}</strong>
+                            </p>
+                            <div class="reply-box">
+                                {{ reply["content"] }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <p class="reply-link" onclick="toggleReplyForm('{{ comment['id'] }}')">
+                    Répondre
+                </p>
+
+                <form id="reply-form-{{ comment['id'] }}"
+                      action="{{ url_for('reply', comment_id=comment['id']) }}"
+                      method="POST"
+                      class="reply-form"
+                      style="display: none;">
+                    <input type="text" name="content" placeholder="Écrire une réponse..." required>
+                    <button type="submit" class="send-reply-btn">Envoyer</button>
+                </form>
             </div>
         {% endif %}
     {% endfor %}
 
-</div>
-            </div>
-        
-
-            {% endfor %}
+    <form action="{{ url_for('comment', dream_id=dream['id']) }}"
+          method="POST"
+          class="comment-form">
+        <input type="text" name="content" placeholder="Écrire un commentaire..." required>
+        <button type="submit">Commenter</button>
+    </form>
+    </div> 
+    </div>
+    {% endfor %}
         {% else %}
             <p>Aucun rêve enregistré pour le moment.</p>
         {% endif %}
         </main>
     </div>
+    <script>
+function toggleComments(id) {
+    const section = document.getElementById("comments-" + id);
+
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
+function toggleReplyForm(id) {
+    const form = document.getElementById("reply-form-" + id);
+
+    if (form.style.display === "none") {
+        form.style.display = "flex";
+    } else {
+        form.style.display = "none";
+    }
+}
+</script>
 </body>
 </html>
 

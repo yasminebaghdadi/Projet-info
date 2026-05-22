@@ -51,21 +51,7 @@ def index():
         return redirect(url_for("login"))
     return redirect(url_for("feed")) 
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT dreams.*, users.username
-        FROM dreams
-        JOIN users ON dreams.user_id = users.id
-        WHERE dreams.is_public = 1
-        ORDER BY dreams.id DESC
-    """)
-
-    dreams = cursor.fetchall()
-    conn.close()
-
-    return render_template("feed.html", dreams=dreams)
+    
 
 
 def get_db_connection():
@@ -111,6 +97,30 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS replies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comment_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    FOREIGN KEY(comment_id) REFERENCES comments(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dream_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    UNIQUE(dream_id, user_id)
+        
+        )
+""")
+
+
+
+
     conn.commit()
     conn.close()
 
@@ -143,22 +153,28 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
+
         email = request.form["email"]
         password = request.form["password"]
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+
+        cursor.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        )
+
         user = cursor.fetchone()
         conn.close()
 
         if user and check_password_hash(user["password"], password):
             session["user_id"] = user["id"]
             session["username"] = user["username"]
-            return redirect(url_for("feed"))
-        else:
-            return "Email ou mot de passe incorrect."
+
+            return redirect(url_for("dashboard"))
 
     return render_template("login.html")
 
@@ -170,29 +186,56 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute(
-        "SELECT * FROM dreams WHERE user_id = ?",
-        (session["user_id"],)
-    )
+    # Récupérer les rêves de l'utilisateur aller marche !!!!!
+    cursor.execute("""
+        SELECT * FROM dreams
+        WHERE user_id = ?
+        ORDER BY id DESC
+    """, (session["user_id"],))
+
     dreams = cursor.fetchall()
 
+    # Récupérer les commentaires ok!!!!!
     cursor.execute("""
         SELECT comments.*, users.username
         FROM comments
         JOIN users ON comments.user_id = users.id
         ORDER BY comments.id DESC
     """)
-    
+
     comments = cursor.fetchall()
+
+    # Récupérer les réponses ok!!!!!
+    cursor.execute("""
+        SELECT replies.*, users.username
+        FROM replies
+        JOIN users ON replies.user_id = users.id
+        ORDER BY replies.id ASC
+    """)
+
+    replies = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT dream_id, COUNT(*) AS like_count 
+        FROM likes
+        GROUP BY dream_id
+    """)
+    likes_rows = cursor.fetchall()
+    
+    likes = {}
+
+    for row in likes_rows: likes[row["dream_id"]] = row["like_count"]
+
     conn.close()
 
     return render_template(
         "dashboard.html",
         dreams=dreams,
         comments=comments,
+        replies=replies,
+        likes=likes,
         username=session["username"]
     )
-
 
 @app.route("/add_dream", methods=["GET", "POST"])
 def add_dream():
@@ -215,7 +258,6 @@ def add_dream():
         conn.commit()
         dream_id = cursor.lastrowid
         conn.close()
-
         return redirect(url_for("result", dream_id=dream_id))
 
     return render_template("add_dream.html")
@@ -246,8 +288,6 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
-
-
 @app.route("/feed")
 def feed():
     if "user_id" not in session:
@@ -273,9 +313,33 @@ def feed():
     """)
     comments = cursor.fetchall()
 
+    cursor.execute("""
+        SELECT replies.*, users.username
+        FROM replies
+        JOIN users ON replies.user_id = users.id
+        ORDER BY replies.id ASC
+    """)
+    replies = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT dream_id, COUNT(*) AS like_count
+        FROM likes
+        GROUP BY dream_id
+    """)
+    likes_rows = cursor.fetchall()
+    
+    likes = {}
+    for row in likes_rows: likes[row["dream_id"]] = row["like_count"]
+
     conn.close()
 
-    return render_template("feed.html", dreams=dreams, comments=comments)
+    return render_template(
+        "feed.html",
+        dreams=dreams,
+        comments=comments,
+        replies=replies,
+        likes=likes,
+    )
 
 
 @app.route("/comment/<int:dream_id>", methods=["POST"])
@@ -338,10 +402,64 @@ def delete_comment(comment_id):
     conn.commit()
     conn.close()
 
-    return redirect(url_for("feed"))
+    return redirect(request.referrer or url_for("feed"))
+
+
+
+
+@app.route("/reply/<int:comment_id>", methods=["POST"])
+def reply(comment_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    content = request.form["content"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO replies (comment_id, user_id, content) VALUES (?, ?, ?)",
+        (comment_id, session["user_id"], content)
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect(request.referrer) 
+
+@app.route("/like/<int:dream_id>", methods=["POST"])
+def like_dream(dream_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM likes WHERE dream_id = ? AND user_id = ?",
+        (dream_id, session["user_id"])
+    )
+    existing_like = cursor.fetchone()
+
+    if existing_like:
+        cursor.execute(
+            "DELETE FROM likes WHERE dream_id = ? AND user_id = ?",
+            (dream_id, session["user_id"])
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO likes (dream_id, user_id) VALUES (?, ?)",
+            (dream_id, session["user_id"])
+        )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(request.referrer or url_for("feed"))
+
+
 
 
 
 if __name__ == "__main__":
+
     init_db()
     app.run(debug=True)

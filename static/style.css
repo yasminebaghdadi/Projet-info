@@ -86,14 +86,21 @@ input, textarea {
 }
 
  .card {
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #dddddd;
-    border-radius: 25px;
-    padding: 35px;
+    background: white;
+    padding: 30px;
     margin-bottom: 40px;
-    max-width: 750px;
+    border-radius: 25px;
+    border: 1px solid #dddddd;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    backdrop-filter: blur(8px);
+    position: relative;
+    display: block;
+    clear: both;
+}
+
+.dreams-section {
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
 }
 
 
@@ -104,6 +111,23 @@ input, textarea {
 
 .logo img {
     width: 70px;
+}
+
+.main-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    font-size: 60px;
+    font-weight: bold;
+    color: #4b4bff;
+    margin-bottom: 20px;
+}
+
+.main-logo-img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
 }
 
 .logo h1 {
@@ -163,6 +187,7 @@ input, textarea {
 .feed-center {
     max-width: 650px;
     margin: 0 auto;
+    margin-top: 30px;
 }
 
 .feed-center h1 {
@@ -314,4 +339,86 @@ input, textarea {
 
 .dreams-section {
     width: 100%;
+}
+
+
+.reply {
+    margin-left: 40px;
+    margin-top: 10px;
+}
+
+.reply-user {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.reply-box {
+    background: #f4f4ff;
+    border-left: 3px solid #6c63ff;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.login-page .card {
+    background: transparent;
+    border: none;
+    box shadow: none;
+}
+
+.reply-link {
+    font-size: 14px;
+    color: #777;
+    margin-top: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.reply-link:hover {
+    color: #6c63ff;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comment-menu summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 20px;
+}
+
+.comment-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.like-section {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.like-btn {
+    border: none;
+    background: #6c63ff;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.like-count {
+    font-weight: bold;
+    color: #6c63ff;
+}
+
+
+.feed-menu .btn {
+    padding: 10px 18px;
+    margin-bottom: 0px;
+    font-size: 15px;
+    border-radius: 25px;
 }
