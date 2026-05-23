@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -18,11 +17,25 @@
 
     
     <label>
-        <input type="checkbox" name="is_public">
-        Publier ce rêve dans le feed public
+    <input type="checkbox" name="is_public">
+    Publier ce rêve
+</label>
+
+<div class="dream-type-box">
+    <label>
+        <input type="radio" name="dream_type" value="reve" checked>
+        🌙 Rêve
     </label>
 
-            <button type="submit" class="btn">Ajouter & Interpréter</button>
+    <label>
+        <input type="radio" name="dream_type" value="cauchemar">
+        😱 Cauchemar
+    </label>
+</div>
+
+<button type="submit" class="btn"> Interpréter</button>
+<a href="{{ url_for('feed') }}" class="btn back-btn"> Retour au fil d'actualité </a>  
+
         </form>
     </div>
 </body>

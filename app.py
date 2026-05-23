@@ -1,4 +1,3 @@
- 
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import os 
@@ -11,15 +10,17 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def analyser_reve(reve):
     
     prompt = f"""
-    Tu es une IA sympathique, naturelle et bienveillante qui aide à comprendre les rêves.
+    Tu es une IA sympathique, naturelle et bienveillante qui aide 
+    à comprendre les rêves.
     Analyse le rêve de façon claire, courte et agréable à lire.
-    Ton style doit être cool, humain, rassurant et facile à comprendre.
+    Ton style doit être cool, humain, rassurant, ludique et facile à comprendre.
     Important 
     - Ne fais pas une réponse trop longue.
     - Ne sois pas trop scientifique ni trop compliqué.
     - Ne dis pas que l'interprétation est une vérité absolue.
     - Donne une vraie analyse psychologique possible.
     - Utilise un ton doux et positif.
+    - Ne propose pas de te poser d'autres questions.
 
 
 
@@ -55,7 +56,7 @@ def index():
 
 
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect('dreams.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -65,25 +66,43 @@ def init_db():
     cursor = conn.cursor()
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    avatar TEXT DEFAULT 'avatar1.png'
+)
+""")
+    try:
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT 'avatar1.png' "
         )
-    """)
+    except sqlite3.OperationalError:
+        pass 
 
+
+    
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS dreams (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            interpretation TEXT,
-            is_public INTEGER DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
+CREATE TABLE IF NOT EXISTS dreams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    interpretation TEXT,
+    is_public INTEGER DEFAULT 0,
+    dream_type TEXT DEFAULT 'reve',
+    FOREIGN KEY (user_id) REFERENCES users (id)
+)
+""")
+    try:
+        cursor.execute("""
+        ALTER TABLE dreams
+        ADD COLUMN dream_type TEXT DEFAULT 'reve'
     """)
+    except sqlite3.OperationalError:
+        pass 
+
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS comments (
@@ -174,7 +193,7 @@ def login():
             session["user_id"] = user["id"]
             session["username"] = user["username"]
 
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("feed"))
 
     return render_template("login.html")
 
@@ -186,13 +205,16 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Récupérer les rêves de l'utilisateur aller marche !!!!!
+    # 1. On récupère proprement l'utilisateur connecté AVEC son avatar
+    cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],))
+    user = cursor.fetchone()
+
+    # 2. On récupère les rêves (SANS le JOIN risqué qui faisait planter)
     cursor.execute("""
         SELECT * FROM dreams
         WHERE user_id = ?
         ORDER BY id DESC
     """, (session["user_id"],))
-
     dreams = cursor.fetchall()
 
     # Récupérer les commentaires ok!!!!!
@@ -202,7 +224,6 @@ def dashboard():
         JOIN users ON comments.user_id = users.id
         ORDER BY comments.id DESC
     """)
-
     comments = cursor.fetchall()
 
     # Récupérer les réponses ok!!!!!
@@ -212,9 +233,9 @@ def dashboard():
         JOIN users ON replies.user_id = users.id
         ORDER BY replies.id ASC
     """)
-
     replies = cursor.fetchall()
 
+    # Récupérer les likes ok!!!!!
     cursor.execute("""
         SELECT dream_id, COUNT(*) AS like_count 
         FROM likes
@@ -223,9 +244,21 @@ def dashboard():
     likes_rows = cursor.fetchall()
     
     likes = {}
+    for row in likes_rows: 
+        likes[row["dream_id"]] = row["like_count"]
 
-    for row in likes_rows: likes[row["dream_id"]] = row["like_count"]
-
+    cursor.execute("""
+    SELECT COUNT(*) FROM dreams
+    WHERE user_id = ? AND dream_type = 'reve'
+    """, (session["user_id"],))
+    total_reves = cursor.fetchone()[0]
+    
+    cursor.execute("""
+        SELECT COUNT(*) FROM dreams
+        WHERE user_id = ? AND dream_type = 'cauchemar'
+    """, (session["user_id"],))
+    total_cauchemars = cursor.fetchone()[0]
+    
     conn.close()
 
     return render_template(
@@ -234,7 +267,10 @@ def dashboard():
         comments=comments,
         replies=replies,
         likes=likes,
-        username=session["username"]
+        username=session["username"],
+        user=user,
+        total_reves=total_reves,
+        total_cauchemars=total_cauchemars
     )
 
 @app.route("/add_dream", methods=["GET", "POST"])
@@ -246,15 +282,17 @@ def add_dream():
         title = request.form["title"]
         content = request.form["content"]
         is_public = 1 if request.form.get("is_public") == "on" else 0
+        dream_type = request.form.get("dream_type", "reve")
+
 
         interpretation = analyser_reve(content)
 
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO dreams (user_id, title, content, interpretation, is_public)
-            VALUES (?, ?, ?, ?, ?)
-        """, (session["user_id"], title, content, interpretation, is_public))
+            INSERT INTO dreams (user_id, title, content, interpretation, is_public, dream_type)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (session["user_id"], title, content, interpretation, is_public, dream_type))
         conn.commit()
         dream_id = cursor.lastrowid
         conn.close()
@@ -297,12 +335,12 @@ def feed():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT dreams.*, users.username
+        SELECT dreams.*, users.username, users.avatar
         FROM dreams
         JOIN users ON dreams.user_id = users.id
         WHERE dreams.is_public = 1
         ORDER BY dreams.id DESC
-    """)
+""")
     dreams = cursor.fetchall()
 
     cursor.execute("""
@@ -455,7 +493,20 @@ def like_dream(dream_id):
 
     return redirect(request.referrer or url_for("feed"))
 
-
+@app.route("/update_avatar", methods=["POST"])
+def update_avatar():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    
+    new_avatar = request.form.get("avatar_name") 
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET avatar = ? WHERE id = ?", (new_avatar, session["user_id"]))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for("dashboard"))
 
 
 

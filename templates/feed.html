@@ -1,266 +1,202 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
-    <title>Feed public</title>
+    <title>Nebula - Feed public</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
+<body class="feed-page">
 
 <div class="reddit-layout">
 
     <aside class="left-menu feed-menu">
-        <h2 class="logo"><img src="{{ url_for('static', filename='IMG_2508.png') }}"
-            class="logo-img">
+        <h2 class="logo">
+            <img src="{{ url_for('static', filename='star.png') }}" class="logo-img">
             Nebula
         </h2>
 
-        <a href="{{ url_for('dashboard') }}" class="btn">
-            👤 Profil
-        </a>
-
-        <a href="{{ url_for('add_dream') }}" class="btn">
-            ➕ Ajouter un rêve
-        </a>
-
-        <a href="{{ url_for('logout') }}" class="btn">
-            🚪 Déconnexion
-        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn">Profil</a>
+        <a href="{{ url_for('add_dream') }}" class="btn">Ajouter un rêve</a>
+        <a href="{{ url_for('logout') }}" class="btn">Déconnexion</a>
     </aside>
 
     <main class="feed-center">
 
-    {% if dreams %}
+        {% if dreams %}
+            {% for dream in dreams %}
 
-        {% for dream in dreams %}
+            <div class="feed-card">
 
-        <div class="feed-card">
+                <div class="post-header">
+                    <div class="post-user">
+                        <img src="{{ url_for('static', filename='avatar/' + dream['avatar']) }}" class="mini-avatar">
+                        <span>{{ dream["username"] }}</span>
+                    </div>
 
-            <div class="post-header">
-                <div class="post-user">👤 {{ dream["username"] }}
-                    
+                    {% if dream["user_id"] == session["user_id"] %}
+                    <details class="post-menu">
+                        <summary>⋮</summary>
+                        <form action="{{ url_for('delete_dream', dream_id=dream['id'], source='feed') }}" method="POST">
+                            <button type="submit" class="delete-btn">🗑 Supprimer</button>
+                        </form>
+                    </details>
+                    {% endif %}
                 </div>
 
-                {% if dream["user_id"] == session["user_id"] %}
+                <h2 class="dream-title">{{ dream["title"] }}</h2>
 
-                <details class="post-menu">
+                <p class="dream-content">{{ dream["content"] }}</p>
 
-                    <summary>⋮</summary>
+                <div class="card-actions">
 
-                    <form action="{{ url_for('delete_dream', dream_id=dream['id']) }}"
-                          method="POST">
+                    <button type="button"
+                            class="show-comments-btn"
+                            data-dream-id="{{ dream['id'] }}"
+                            onclick="toggleInterpretation(this.getAttribute('data-dream-id'))">
+                        🔮 Voir l’interprétation IA
+                    </button>
 
-                        <button type="submit" class="delete-btn">
-                            🗑
+                    <button type="button"
+                            class="show-comments-btn"
+                            data-dream-id="{{ dream['id'] }}"
+                            onclick="toggleComments(this.getAttribute('data-dream-id'))">
+                        💬 Commentaire
+                    </button>
+
+                    <form action="{{ url_for('like_dream', dream_id=dream['id']) }}"
+                          method="POST"
+                          class="like-section-form">
+
+                        <button type="submit" class="like-btn">
+                            Like ❤️ <span>{{ likes.get(dream["id"], 0) }}</span>
                         </button>
 
                     </form>
 
-                </details>
+                </div>
 
-                {% endif %}
+                <div id="interpretation-{{ dream['id'] }}" class="interpretation">
+                    <strong>🔮 Interprétation IA :</strong>
+                    <p>{{ dream["interpretation"] }}</p>
+                </div>
 
-            </div>
+                <div id="comments-{{ dream['id'] }}" class="comments-section">
 
-            <h2>{{ dream["title"] }}</h2>
+                    <form action="{{ url_for('comment', dream_id=dream['id']) }}"
+                          method="POST"
+                          class="comment-form">
 
-            <p>{{ dream["content"] }}</p>
+                        <input type="text"
+                               name="content"
+                               placeholder="Écrire un commentaire..."
+                               required>
 
-            <button class="show-comments-btn"
-                    onclick="toggleInterpretation('{{ dream['id'] }}')">
+                        <button type="submit">Commenter</button>
+                    </form>
 
-                Voir l’interprétation IA
+                    {% if comments %}
+                        {% for comment in comments if comment["dream_id"] == dream["id"] %}
 
-            </button>
+                        <div class="comment">
 
-            <div id="interpretation-{{ dream['id'] }}"
-                 class="interpretation"
-                 style="display:none;">
+                            <div class="comment-header">
+                                <strong>{{ comment["username"] }}</strong>
 
-                <strong>Interprétation IA :</strong>
-
-                <p>{{ dream["interpretation"] }}</p>
-
-            </div>
-
-            <button class="show-comments-btn"
-                    onclick="toggleComments('{{ dream['id'] }}')">
-
-                Commentaire
-
-            </button>
-            <div class="like-section">
-                <form action="{{ url_for('like_dream', dream_id=dream['id']) }}" method="POST">
-                    <button type="submit" class="like-btn">👍 Like</button>
-                </form>
-                
-                <span class="like-count">
-                    ❤️ {{ likes.get(dream["id"], 0) }}
-                </span>
-            </div>
-
-            <div id="comments-{{ dream['id'] }}"
-                 class="comments-section"
-                 style="display:none;">
-
-                {% for comment in comments %}
-
-                    {% if comment["dream_id"] == dream["id"] %}
-
-                    <div class="comment">
-                        <div class="comment-header">
-                            <strong>{{ comment["username"] }}</strong>
-                            {% if comment["user_id"] == session["user_id"] %}
-                            <details class="comment-menu">
-                                <summary>⋯</summary>
-                                <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}" method="POST">
-                                    <button type="submit" class="delete-btn">🗑 Supprimer</button>
-                                 </form>
+                                {% if comment["user_id"] == session["user_id"] %}
+                                <details class="comment-menu">
+                                    <summary>⋮</summary>
+                                    <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}" method="POST">
+                                        <button type="submit" class="delete-btn">🗑 Supprimer</button>
+                                    </form>
                                 </details>
                                 {% endif %}
                             </div>
+
                             <p>{{ comment["content"] }}</p>
 
-                        {% for reply in replies %}
-
-                            {% if reply["comment_id"] == comment["id"] %}
-
-                            <div class="reply">
-
-                                <p class="reply-user">
-                                    Réponse de
-                                    <strong>{{ reply["username"] }}</strong>
-                                </p>
-
-                                <div class="reply-box">
-                                    {{ reply["content"] }}
+                            {% if replies %}
+                            <div class="replies">
+                                {% for reply in replies if reply["comment_id"] == comment["id"] %}
+                                <div class="reply">
+                                    <strong>{{ reply["username"] }}</strong> {{ reply["content"] }}
                                 </div>
-
+                                {% endfor %}
                             </div>
-
                             {% endif %}
 
+                            <p class="reply-link"
+                               data-comment-id="{{ comment['id'] }}"
+                               onclick="toggleReplyForm(this.getAttribute('data-comment-id'))">
+                                Répondre
+                            </p>
+
+                            <form id="reply-form-{{ comment['id'] }}"
+                                  action="{{ url_for('reply', comment_id=comment['id']) }}"
+                                  method="POST"
+                                  class="reply-form">
+
+                                <input type="text"
+                                       name="content"
+                                       placeholder="Écrire une réponse..."
+                                       required>
+
+                                <button type="submit" class="send-reply-btn">
+                                    Envoyer
+                                </button>
+
+                            </form>
+
+                        </div>
+
                         {% endfor %}
-
-                        <p class="reply-link"
-                           onclick="toggleReplyForm('{{ comment['id'] }}')">
-
-                            Répondre
-
-                        </p>
-
-                        <form id="reply-form-{{ comment['id'] }}"
-                              action="{{ url_for('reply', comment_id=comment['id']) }}"
-                              method="POST"
-                              class="reply-form"
-                              style="display:none;">
-
-                            <input type="text"
-                                   name="content"
-                                   placeholder="Écrire une réponse..."
-                                   required>
-
-                            <button type="submit"
-                                    class="send-reply-btn">
-
-                                Envoyer
-
-                            </button>
-
-                        </form>
-
-                    </div>
-
                     {% endif %}
 
-                {% endfor %}
-
-                <form action="{{ url_for('comment', dream_id=dream['id']) }}"
-                      method="POST"
-                      class="comment-form">
-
-                    <input type="text"
-                           name="content"
-                           placeholder="Écrire un commentaire..."
-                           required>
-
-                    <button type="submit">
-                        Commenter
-                    </button>
-
-                </form>
+                </div>
 
             </div>
 
-        </div>
-
-        {% endfor %}
-
-    {% else %}
-
-        <div class="feed-card">
-
-            <h2>Aucune publication</h2>
-
-            <p>Aucun rêve public n'a encore été publié.</p>
-
-        </div>
-
-    {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="feed-card">
+                <h2>Aucune publication</h2>
+            </div>
+        {% endif %}
 
     </main>
 
 </div>
 
 <script>
+function toggleInterpretation(id) {
+    const box = document.getElementById("interpretation-" + id);
+
+    if (box.style.display === "block") {
+        box.style.display = "none";
+    } else {
+        box.style.display = "block";
+    }
+}
 
 function toggleComments(id) {
+    const box = document.getElementById("comments-" + id);
 
-    const section = document.getElementById("comments-" + id);
-
-    if (section.style.display === "none") {
-
-        section.style.display = "block";
-
+    if (box.style.display === "block") {
+        box.style.display = "none";
     } else {
-
-        section.style.display = "none";
-
+        box.style.display = "block";
     }
 }
 
 function toggleReplyForm(id) {
+    const box = document.getElementById("reply-form-" + id);
 
-    const form = document.getElementById("reply-form-" + id);
-
-    if (form.style.display === "none") {
-
-        form.style.display = "flex";
-
+    if (box.style.display === "flex") {
+        box.style.display = "none";
     } else {
-
-        form.style.display = "none";
-
+        box.style.display = "flex";
     }
 }
-
-function toggleInterpretation(id) {
-
-    const section = document.getElementById("interpretation-" + id);
-
-    if (section.style.display === "none") {
-
-        section.style.display = "block";
-
-    } else {
-
-        section.style.display = "none";
-
-    }
-}
-
 </script>
 
 </body>
